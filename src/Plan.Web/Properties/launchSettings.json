@@ -1,0 +1,33 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:11506",
+      "sslPort": 44316
+    }
+  },
+  "profiles": {
+    "Plan.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:7048;http://localhost:5048",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": "Microsoft.AspNetCore.SpaProxy;Microsoft.Azure.SignalR",
+        "VaultUri": "https://anfwebvault.vault.azure.net/",
+        "AZURE_USERNAME": "15218450198@163.com"
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": "Microsoft.AspNetCore.SpaProxy;Microsoft.Azure.SignalR",
+        "VaultUri": "https://anfwebvault.vault.azure.net/",
+        "AZURE_USERNAME": "15218450198@163.com"
+      }
+    }
+  }
+}
