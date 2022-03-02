@@ -1,6 +1,4 @@
-﻿using Plan.ChannelModel.Helpers;
-using Plan.ChannelModel.Results;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -9,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Plan.Services;
 using Quartz;
+using Plan.Services.Results;
+using Plan.Services.Models;
 
 namespace Plan.Web.Controllers
 {
@@ -53,8 +53,15 @@ namespace Plan.Web.Controllers
         [ProducesResponseType(typeof(EntityResult<RSAKeyIdentity>),200)]
         public async Task<IActionResult> FlushKey()
         {
-            var key = await userService.FlushRSAKey();
-            var res = new EntityResult<RSAKeyIdentity> { Data = key };
+            var key = await userService.FlushRSAKeyAsync();
+            var res = new EntityResult<RSAKeyIdentity>
+            {
+                Data = new RSAKeyIdentity
+                {
+                    PublicKey = key.PublicKey,
+                    Identity = key.Identity
+                }
+            };
             return Ok(res);
         }
         [Authorize(AuthenticationSchemes = PlanAuthenticationHandler.SkipAuthSchemeName)]

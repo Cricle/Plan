@@ -12,7 +12,7 @@ namespace StackExchange.Redis
     internal static class RedisValueExtensions
     {
         private static readonly ConcurrentDictionary<Type, object> emptyStructs = new ConcurrentDictionary<Type, object>();
-        
+
         public static object Get(this RedisValue value,Type type)
         {
             if (!value.HasValue || value.IsNull)
@@ -103,7 +103,7 @@ namespace StackExchange.Redis
         {
             if (!value.HasValue || value.IsNull)
             {
-                return default(T);
+                return default;
             }
             var type = typeof(T);
             if (type.IsPrimitive)

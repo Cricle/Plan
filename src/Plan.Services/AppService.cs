@@ -1,4 +1,4 @@
-﻿using Plan.ChannelModel;
+﻿using Plan.Services;
 using StackExchange.Redis;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -9,11 +9,11 @@ using RedLockNet;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Plan.Core.Models;
-using Plan.ChannelModel.KeyGenerator;
 using Microsoft.Extensions.Caching.Memory;
 using System;
-using Plan.Redis;
 using System.Collections.Generic;
+using SecurityLogin;
+using SecurityLogin.Redis;
 
 namespace Plan.Services
 {
@@ -48,18 +48,18 @@ namespace Plan.Services
         }
         private Task<bool> DeleteAppCacheAsync(string appKey)
         {
-            var redisKey = RedisKeyGenerator.Concat(AppInfoKey, appKey);
+            var redisKey = KeyGenerator.Concat(AppInfoKey, appKey);
             return database.KeyDeleteAsync(redisKey);
         }
         private async Task<AppInfoSnapshot> GetAppAsync(string appKey)
         {
-            var notExistsKey = RedisKeyGenerator.Concat(AppInfoNotExistKey, appKey);
+            var notExistsKey = KeyGenerator.Concat(AppInfoNotExistKey, appKey);
             var isNotExists = await database.KeyExistsAsync(notExistsKey);
             if (isNotExists)
             {
                 return null;
             }
-            var redisKey = RedisKeyGenerator.Concat(AppInfoKey, appKey);
+            var redisKey = KeyGenerator.Concat(AppInfoKey, appKey);
             var hashs = await database.HashGetAllAsync(redisKey);
             if (hashs.Length == 0)
             {
@@ -97,12 +97,12 @@ namespace Plan.Services
         }
         public Task<bool> HasSessionAsync(string appKey, string session)
         {
-            var redisKey = RedisKeyGenerator.Concat(AppInfoSessionKey, appKey, session);
+            var redisKey = KeyGenerator.Concat(AppInfoSessionKey, appKey, session);
             return database.KeyExistsAsync(redisKey);
         }
         public async Task<DateTime?> GetSessionExpireTimeAsync(string appKey, string session)
         {
-            var redisKey = RedisKeyGenerator.Concat(AppInfoSessionKey, appKey, session);
+            var redisKey = KeyGenerator.Concat(AppInfoSessionKey, appKey, session);
             var val = await database.StringGetAsync(redisKey);
             if (val.HasValue && val.TryParse(out long ts))
             {
@@ -143,7 +143,7 @@ namespace Plan.Services
         }
         public Task<int> DeleteSessionsAsync(string appKey)
         {
-            var key = RedisKeyGenerator.Concat(AppInfoSessionKey, appKey);
+            var key = KeyGenerator.Concat(AppInfoSessionKey, appKey);
             return database.DeleteScanKeysAsync(key + "*", 400);
         }
         
@@ -178,12 +178,12 @@ namespace Plan.Services
         }
         public Task<TimeSpan?> GetSessionTimeAsync(string appKey, string session)
         {
-            var redisKey = RedisKeyGenerator.Concat(AppInfoSessionKey, appKey, session);
+            var redisKey = KeyGenerator.Concat(AppInfoSessionKey, appKey, session);
             return database.KeyIdleTimeAsync(redisKey);
         }
         public Task<bool> DeleteSessionAsync(string appKey, string session)
         {
-            var redisKey = RedisKeyGenerator.Concat(AppInfoSessionKey, appKey, session);
+            var redisKey = KeyGenerator.Concat(AppInfoSessionKey, appKey, session);
             return database.KeyDeleteAsync(redisKey);
         }
 
@@ -224,7 +224,7 @@ namespace Plan.Services
                 AccessToken = accessToken,
                 ExpireTime = (int)tokenTime.TotalMilliseconds
             };
-            var redisKey = RedisKeyGenerator.Concat(AppInfoSessionKey, appKey, accessToken);
+            var redisKey = KeyGenerator.Concat(AppInfoSessionKey, appKey, accessToken);
             await database.StringSetAsync(redisKey, now.Add(tokenTime).Ticks, tokenTime);
             return session;
         }

@@ -1,16 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Plan.ChannelModel.KeyGenerator;
-using Plan.ChannelModel.Results;
+using Plan.Services.Results;
 using Plan.Core.Models;
 using Plan.Identity;
 using Plan.Services.Models;
 using StackExchange.Redis;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using SecurityLogin;
 
 namespace Plan.Services
 {
@@ -78,12 +76,12 @@ namespace Plan.Services
         }
         private Task<int> DeleteGroupsCacheAsync(long userId)
         {
-            var key = RedisKeyGenerator.Concat(GroupsKey, userId);
+            var key = KeyGenerator.Concat(GroupsKey, userId);
             return database.DeleteScanKeysAsync(key + "*");
         }
         public async Task<SetResult<GroupSnapsnot>> GetGroupAsyncs(string keywork,long? userId,int? skip,int? take)
         {
-            var key = RedisKeyGenerator.Concat(GroupsKey, userId, keywork, skip, take);
+            var key = KeyGenerator.Concat(GroupsKey, userId, keywork, skip, take);
             var rs = await database.JsonGetAsync<SetResult<GroupSnapsnot>>(key);
             if (rs != null)
             {

@@ -1,5 +1,4 @@
-﻿using Plan.ChannelModel;
-using Plan.ChannelModel.Helpers;
+﻿using Plan.Services;
 using Microsoft.AspNetCore.Identity;
 using StackExchange.Redis;
 using System.Collections.Generic;
@@ -10,10 +9,12 @@ using System.Threading.Tasks;
 using Plan.Core.Models;
 using Microsoft.Extensions.Options;
 using RedLockNet;
+using SecurityLogin.Mode.RSA;
+using SecurityLogin;
+using Plan.Services.Models;
 
 namespace Plan.Services
 {
-
     public class UserService: RSALoginService
     {
         private static readonly string RSAKey = "Plan.Services.UserService.RSAKey";
@@ -25,19 +26,31 @@ namespace Plan.Services
         private readonly UserManager<PlanUser> userManager;
         private readonly IOptions<UserServiceOptions> options;
 
-        public UserService(IDatabase database,
-            UserIdentityService userIdentityService,
-            UserManager<PlanUser> userManager,
-            IOptions<UserServiceOptions> options,
-            IDistributedLockFactory lockFactory)
-            :base(database,lockFactory)
+        public UserService(ILockerFactory lockerFactory, 
+            ICacheVisitor cacheVisitor, 
+            UserIdentityService userIdentityService, 
+            UserManager<PlanUser> userManager, 
+            IOptions<UserServiceOptions> options) 
+            : base(lockerFactory, cacheVisitor)
         {
-            this.options = options;
             this.userIdentityService = userIdentityService;
             this.userManager = userManager;
+            this.options = options;
         }
 
-        
+        public UserService(ILockerFactory lockerFactory, 
+            ICacheVisitor cacheVisitor, 
+            IEncryptor<AsymmetricFullKey> encryptor,
+            UserIdentityService userIdentityService,
+            UserManager<PlanUser> userManager,
+            IOptions<UserServiceOptions> options) 
+            : base(lockerFactory, cacheVisitor, encryptor)
+        {
+            this.userIdentityService = userIdentityService;
+            this.userManager = userManager;
+            this.options = options;
+        }
+
         public Task<string> GenerateResetTokenAsync(string userName)
         {
             var user = new PlanUser { UserName = userName };
@@ -52,28 +65,36 @@ namespace Plan.Services
             }
             var user = new PlanUser { UserName = userName };
             var ok = await userManager.ResetPasswordAsync(user, resetToken, pwdNew);
+            if (ok.Succeeded)
+            {
+                await DeleteKeyAsync(connectId).ConfigureAwait(false);
+            }
             return ok.Succeeded;
         }
         public async Task<bool> RestPasswordWithOldAsync(string connectId, string userName, string old, string @new)
         {
             var header = GetHeader();
-            var privateKey = await GetPrivateKeyAsync(header, connectId);
+            var privateKey = await GetFullKeyAsync(header, connectId);
             if (privateKey is null)
             {
                 return false;
             }
-            var pwdOld = RSAHelper.RSADecrypt(privateKey, old);
+            var pwdOld = Encryptor.DecryptToString(privateKey, old);
             if (string.IsNullOrEmpty(pwdOld))
             {
                 return false;
             }
-            var pwdNew = RSAHelper.RSADecrypt(privateKey, @new);
+            var pwdNew = Encryptor.DecryptToString(privateKey, @new);
             if (string.IsNullOrEmpty(pwdNew))
             {
                 return false;
             }
             var user = new PlanUser { UserName = userName };
             var ok = await userManager.ChangePasswordAsync(user, pwdOld, pwdNew);
+            if (ok.Succeeded)
+            {
+                await DeleteKeyAsync(connectId).ConfigureAwait(false);
+            }
             return ok.Succeeded;
         }
         public async Task<bool> RegisteAsync(string connectId, string userName, string passwordHash)
@@ -85,9 +106,13 @@ namespace Plan.Services
             }
             var user = new PlanUser { UserName = userName };
             var identity = await userManager.CreateAsync(user, pwd);
+            if (identity.Succeeded)
+            {
+                await DeleteKeyAsync(connectId).ConfigureAwait(false);
+            }
             return identity.Succeeded;
         }
-        protected override string GetRSAGenLockKey()
+        protected override string GetSharedLockKey()
         {
             return SharedRSALockKey;
         }
@@ -121,14 +146,15 @@ namespace Plan.Services
                     Name = u.NormalizedUserName
                 };
                 var tk = await userIdentityService.SetIdentityAsync(identity);
+                await DeleteKeyAsync(connectId).ConfigureAwait(false);
                 return tk;
             }
             return null;
         }
-
         protected override string GetSharedIdentityKey()
         {
             return SharedRSAIdentityKey;
         }
+
     }
 }

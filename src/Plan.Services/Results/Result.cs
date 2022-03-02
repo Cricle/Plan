@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Plan.ChannelModel.Results
+namespace Plan.Services.Results
 {
     /// <summary>
     /// 表示默认的结果

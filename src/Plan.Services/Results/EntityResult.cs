@@ -1,4 +1,4 @@
-﻿namespace Plan.ChannelModel.Results
+﻿namespace Plan.Services.Results
 {
     /// <summary>
     /// 表示实体结果

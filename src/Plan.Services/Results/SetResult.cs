@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Plan.ChannelModel.Results
+namespace Plan.Services.Results
 {
     /// <summary>
     /// 表示实体集合结果
