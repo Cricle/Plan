@@ -141,7 +141,7 @@ namespace Plan.Services
             //先不移除键了
             return res;
         }
-        public Task<int> DeleteSessionsAsync(string appKey)
+        public Task<long> DeleteSessionsAsync(string appKey)
         {
             var key = KeyGenerator.Concat(AppInfoSessionKey, appKey);
             return database.DeleteScanKeysAsync(key + "*", 400);
